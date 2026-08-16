@@ -50,13 +50,13 @@ blender-next/
 
 ## 📖 Architecture & Design Documentation
 
-*   [**Technical Architecture Specification**](file:///home/jbelew/projects/uncms/docs/architecture_specification.md): Complete specifications for dynamic component maps, code-splitting registries, and global CSS theme variables.
-*   [**Git-Backed Campaign Workflows**](file:///home/jbelew/projects/uncms/docs/git_campaign_workflows.md): Design vision for mapping campaigns to Git branches and reviews to Pull Requests.
-*   [**Scaling Strategy (1,000s of Pages)**](file:///home/jbelew/projects/uncms/docs/scaling_strategy.md): Describes local SQLite cache databases, Next.js ISR pre-rendering limits, and paginated infinite-scroll APIs.
-*   [**Block Cardinality & Constraints**](file:///home/jbelew/projects/uncms/docs/block_cardinality_and_constraints.md): Enforcing rigid template slots and quantity/positional limits via Zod refinement.
-*   [**Architectural Drawbacks & Trade-offs**](file:///home/jbelew/projects/uncms/docs/architectural_drawbacks.md): Objective review of write scalability, security implications of code/content co-location, and local history size bloat.
-*   [**Enterprise Database Scaling**](file:///home/jbelew/projects/uncms/docs/enterprise_database_strategy.md): Migration pathways to PlanetScale, PostgreSQL JSONB, or MongoDB Atlas at scale.
-*   [**Design System Strategy (Why Shadcn?)**](file:///home/jbelew/projects/uncms/docs/design_system_strategy.md): Architectural benefits of choosing copied component codebases over compiled library packages.
+*   [**Technical Architecture Specification**](./docs/architecture_specification.md): Complete specifications for dynamic component maps, code-splitting registries, and global CSS theme variables.
+*   [**Git-Backed Campaign Workflows**](./docs/git_campaign_workflows.md): Design vision for mapping campaigns to Git branches and reviews to Pull Requests.
+*   [**Scaling Strategy (1,000s of Pages)**](./docs/scaling_strategy.md): Describes local SQLite cache databases, Next.js ISR pre-rendering limits, and paginated infinite-scroll APIs.
+*   [**Block Cardinality & Constraints**](./docs/block_cardinality_and_constraints.md): Enforcing rigid template slots and quantity/positional limits via Zod refinement.
+*   [**Architectural Drawbacks & Trade-offs**](./docs/architectural_drawbacks.md): Objective review of write scalability, security implications of code/content co-location, and local history size bloat.
+*   [**Enterprise Database Scaling**](./docs/enterprise_database_strategy.md): Migration pathways to PlanetScale, PostgreSQL JSONB, or MongoDB Atlas at scale.
+*   [**Design System Strategy (Why Shadcn?)**](./docs/design_system_strategy.md): Architectural benefits of choosing copied component codebases over compiled library packages.
 
 ---
 

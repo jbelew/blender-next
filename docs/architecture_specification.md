@@ -145,7 +145,7 @@ export const BlogTemplateSchema = z.object({
 ```
 
 ### B. Discriminated Union Parsing
-The master schema validator inside [`src/schemas/page.ts`](file:///home/jbelew/projects/uncms/apps/storefront/src/schemas/page.ts) aggregates these templates using a Zod discriminated union. When a layout is loaded, Zod matches the `"template"` property first and validates the layout blocks against that specific template's rules:
+The master schema validator inside [`src/schemas/page.ts`](../apps/storefront/src/schemas/page.ts) aggregates these templates using a Zod discriminated union. When a layout is loaded, Zod matches the `"template"` property first and validates the layout blocks against that specific template's rules:
 
 ```typescript
 import { z } from 'zod';
@@ -197,7 +197,7 @@ export default function DynamicPageClient({ initialData, slug }: DynamicPageClie
 
 ## 7. CSS Custom Property Theme System
 
-To separate core presentation markup from React components, Blender Next implements a central **CSS Variable Theme System** inside [`src/app/globals.css`](file:///home/jbelew/projects/uncms/apps/storefront/src/app/globals.css). Hard-coded spacing, shadows, and colors are replaced by design tokens:
+To separate core presentation markup from React components, Blender Next implements a central **CSS Variable Theme System** inside [`src/app/globals.css`](../apps/storefront/src/app/globals.css). Hard-coded spacing, shadows, and colors are replaced by design tokens:
 
 ```css
 :root {

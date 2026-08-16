@@ -91,7 +91,7 @@ export async function GET(request: Request) {
 }
 ```
 
-*   **Editor Panel UI**: In [`admin/page.tsx`](file:///home/jbelew/projects/uncms/apps/storefront/src/app/admin/page.tsx), we replace the raw page list with a search input and an **infinite-scroll list** that calls `GET /api/blender?page=2...` as the user scrolls.
+*   **Editor Panel UI**: In [`admin/page.tsx`](../apps/storefront/src/app/admin/page.tsx), we replace the raw page list with a search input and an **infinite-scroll list** that calls `GET /api/blender?page=2...` as the user scrolls.
 
 ---
 

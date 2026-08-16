@@ -46,7 +46,7 @@ Pre-compiled packaged libraries can easily bloat client-side bundles because imp
 ## 4. CSS Custom Property Theme Integration
 
 *   **Standard CSS Variables**: Shadcn UI relies on standard CSS variable custom properties (`var(--background)`, `var(--radius-md)`) rather than CSS-in-JS style objects.
-*   **The Advantage**: Blender Next maps layout tokens directly to Shadcn styles inside a single, central [`globals.css`](file:///home/jbelew/projects/uncms/apps/storefront/src/app/globals.css) sheet. Rebranding the entire design system (colors, borders, typography, spacing) requires zero JavaScript modifications.
+*   **The Advantage**: Blender Next maps layout tokens directly to Shadcn styles inside a single, central [`globals.css`](../apps/storefront/src/app/globals.css) sheet. Rebranding the entire design system (colors, borders, typography, spacing) requires zero JavaScript modifications.
 
 ---
 
