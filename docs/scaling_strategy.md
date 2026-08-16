@@ -1,19 +1,21 @@
-# Scaling Blender Next to 1,000s of Pages
+# Scaling Blender Next to 1,000s of pages
 
-While a flat-file Git CMS is excellent for smaller sites, managing hundreds or thousands of pages introduces architectural bottlenecks. This document outlines how Blender Next scales to handle 1,000+ pages efficiently without sacrificing developer experience, compilation times, or editor visual performance.
+A flat-file Git layout setup is clean for smaller storefronts, but scanning folders and parsing Zod models for thousands of JSON files will slow down dynamic requests and balloon build times. 
 
----
-
-## The Bottlenecks of Scale in Git CMS
-1.  **Read Bottleneck**: Scanning directories and parsing Zod models for thousands of JSON files on every dynamic request is CPU-intensive.
-2.  **Build Bottleneck**: Pre-rendering 5,000 pages statically during the CI/CD build process will inflate build times from seconds to hours.
-3.  **UI Bottleneck**: Rendering a list of 1,000+ pages in the editor sidebar will lag the browser DOM.
+Here is how Blender Next scales to support thousands of pages without degrading build pipelines or editor performance.
 
 ---
 
-## 1. Solution: Local SQLite Indexing Cache (`.blender/cache.db`)
+## The scaling bottlenecks
+1.  **Read performance**: Running `fs.readdir` and parsing Zod schemas for thousands of files on every request is CPU-intensive.
+2.  **Build queue congestion**: Pre-rendering 5,000 static pages during the CI/CD build will inflate build times from seconds to hours.
+3.  **Dashboard lag**: Rendering a list of 1,000+ pages in the editor sidebar will lag the browser DOM.
 
-To solve the read bottleneck, Blender Next introduces a local SQLite cache database (such as a lightweight client-side file like `better-sqlite3` or a Bun-native SQLite database).
+---
+
+## 1. Cache pages locally with SQLite (`.blender/cache.db`)
+
+To avoid reading the filesystem constantly, Blender Next uses a local SQLite cache database (using a lightweight engine like `better-sqlite3` or a Bun-native SQLite connection).
 
 ```mermaid
 graph LR
@@ -23,22 +25,22 @@ graph LR
     Editor[Editor Sidebar] <-->|Paginated SQL Query| SQLite
 ```
 
-### How the Sync Engine works:
-*   During development, a filesystem watcher (like `chokidar`) monitors `/content/pages`.
-*   When `about.json` is added/updated, only that single file is read, validated via Zod, and its metadata (e.g. `id`, `title`, `slug`) is upserted into the SQLite database.
-*   In production, the sync engine runs as a lightweight script during the initial build phase or as a Git commit hook.
-*   **The Query Shift**: All load and list requests in Next.js query the SQLite database instead of scanning directories:
+### How the sync engine behaves:
+*   In development, a watcher (like `chokidar`) monitors `/content/pages`.
+*   When a file like `about.json` is saved, only that file is validated and upserted into the SQLite cache.
+*   In production, the sync script runs once during the initial build or as a Git commit hook.
+*   **Querying the cache**: All dynamic routes query the SQLite index instead of scanning directories:
     ```typescript
-    // Instead of fs.readdir and parsing every file, execute index-backed lookups:
+    // We execute index-backed queries instead of fs.readdir:
     const pages = db.prepare('SELECT id, title FROM pages WHERE title LIKE ? LIMIT 20').all(`%${search}%`);
     ```
-    This reduces page-lookup and list times from **seconds** to **less than 1 millisecond**.
+    This drops page lookup and listing times to **less than 1 millisecond**.
 
 ---
 
-## 2. Solution: Next.js Incremental Static Regeneration (ISR)
+## 2. Use Next.js Incremental Static Regeneration (ISR)
 
-To prevent long build times in production, we do **not** statically pre-render all 1,000+ pages during build time. Instead, we use Next.js App Router **ISR**:
+We do not pre-render all 1,000+ pages at build time. Instead, we use Next.js App Router **ISR** to generate pages on-demand:
 
 ```tsx
 // apps/storefront/src/app/[slug]/page.tsx
@@ -50,7 +52,7 @@ export async function generateStaticParams() {
   return topPages.map(p => ({ slug: p.slug }));
 }
 
-// 2. Set dynamicParams to true (or omit it) to generate other pages on-demand
+// 2. Set dynamicParams to true to generate other pages on-demand
 export const dynamicParams = true; 
 
 export default async function Page({ params }) {
@@ -63,15 +65,15 @@ export default async function Page({ params }) {
   return <DynamicPageClient initialData={page} slug={params.slug} />;
 }
 ```
-*   **Result**: Your Next.js deployment remains fast (typically under 1 minute) regardless of whether you have 100 pages or 10,000 pages.
+*   **Deployment impact**: Next.js builds remain fast (typically under 1 minute) regardless of whether you have 100 pages or 10,000 pages.
 
 ---
 
-## 3. Solution: API-Level Pagination & Lazy Loading
+## 3. Paginate the editor list API
 
-For the editor UI dashboard, listing all files is replaced by query-driven listing.
+For the editor UI, listing all files is replaced by query-driven paging.
 
-### Updated Page API Endpoint:
+### Updated page API route:
 ```typescript
 // apps/storefront/src/app/api/blender/route.ts
 export async function GET(request: Request) {
@@ -82,7 +84,7 @@ export async function GET(request: Request) {
   
   const offset = (page - 1) * limit;
   
-  // Executed on SQLite database
+  // Query the SQLite cache
   const pages = db.prepare(
     'SELECT id, title FROM pages WHERE id LIKE ? OR title LIKE ? LIMIT ? OFFSET ?'
   ).all(`%${search}%`, `%${search}%`, limit, offset);
@@ -91,12 +93,12 @@ export async function GET(request: Request) {
 }
 ```
 
-*   **Editor Panel UI**: In [`admin/page.tsx`](../apps/storefront/src/app/admin/page.tsx), we replace the raw page list with a search input and an **infinite-scroll list** that calls `GET /api/blender?page=2...` as the user scrolls.
+*   **Editor Panel UI**: In [`admin/page.tsx`](../apps/storefront/src/app/admin/page.tsx), we replace the full list with a search input and an **infinite-scroll list** that calls `GET /api/blender?page=2...` as the user scrolls.
 
 ---
 
-## 4. Git Merge Conflict Resolution Strategy
+## 4. Handling merge conflicts
 
-With hundreds of pages and multiple editors, merge conflicts can arise:
-1.  **Separate Files**: By storing each page as a separate JSON file (e.g. `about.json`, `team.json`), editors working on different pages will never experience merge conflicts.
-2.  **Visual Branching**: In production, when an editor logs into the admin portal, they can choose to edit in a "Draft Branch" (e.g., `draft/new-about-page`). Blender Next creates a new Git branch, saves edits there, and issues a Pull Request in GitHub/GitLab, allowing developers to review and resolve any conflicts before merging.
+With hundreds of pages and multiple editors, merge conflicts can arise. We solve this through:
+1.  **Separate layout files**: Storing each page as its own JSON file (e.g. `about.json`, `team.json`) ensures editors working on different pages never conflict.
+2.  **Branch-based campaigns**: For shared changes, editors work on isolated campaign branches (`draft/new-about-page`). Saves push commits to that branch and trigger a Pull Request, allowing conflicts to be managed cleanly before merging.

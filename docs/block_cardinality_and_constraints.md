@@ -1,16 +1,16 @@
-# Block Cardinality and Layout Constraints
+# Block cardinality and layout constraints
 
-In a page-builder system, **block cardinality** refers to enforcing rules about which blocks can be placed on a page, how many of them can exist, and where they can be positioned.
+In a page-builder, "block cardinality" simply means controlling which blocks can go where on a page, and how many of them are allowed.
 
-Traditional content management systems struggle with this, often allowing editors to accidentally break designs (e.g., placing two Hero banners or putting a newsletter signup block at the very top of a page). 
+Most database-backed CMS platforms struggle with this, letting editors accidentally break layout designs (like putting a newsletter sign-up block at the very top of a homepage or stack two heroes). 
 
-Because Blender Next uses **Zod** as its schema engine, we can enforce strict cardinality rules using standard TypeScript validators.
+Since Blender Next uses Zod as its schema validator, we can enforce strict placement and quantity rules directly in our code.
 
 ---
 
-## 1. Enforcing Quantity Limits (e.g. Max 1 Hero, Max 2 Grids)
+## 1. Enforcing quantity limits (e.g. Max 1 Hero, Max 2 Grids)
 
-You can write custom Zod `.refine()` rules to enforce that a specific block type can only appear a set number of times:
+We can write custom Zod `.refine()` rules to enforce that a specific block type only appears a set number of times:
 
 ```typescript
 import { z } from 'zod';
@@ -43,9 +43,9 @@ export const PageSchema = z.object({
 
 ---
 
-## 2. Enforcing Positional Rules (e.g. Hero must be first)
+## 2. Enforcing positional rules (e.g. Hero must be first)
 
-To ensure that editors cannot place structural items (like a Hero banner) below a footer or product grid, we write index-based positional checks:
+To ensure editors cannot drag hero banners below product lists or footers, we write index-based positional checks:
 
 ```typescript
 export const PageSchema = z.object({
@@ -63,9 +63,9 @@ export const PageSchema = z.object({
 
 ---
 
-## 3. Structural Constraints (Fixed Templates)
+## 3. Structural constraints (Fixed templates)
 
-If you want a page to have a strict, non-customizable sequence of layout modules (e.g. exactly one hero section at the top, a list of middle text blocks, and exactly one shoppable grid at the bottom), you can model the schema **structurally** instead of as a dynamic array:
+If you want a page to have a strict, non-customizable sequence of layout modules (e.g. exactly one hero section at the top, a body text blocks array in the middle, and exactly one shoppable grid at the bottom), you can model the schema **structurally** instead of as a dynamic array:
 
 ```typescript
 export const CampaignPageSchema = z.object({
@@ -80,4 +80,4 @@ export const CampaignPageSchema = z.object({
 });
 ```
 
-*   **Editor Experience**: Blender Next reads this schema shape and locks the layout structure in the editor panel. Editors can modify the contents of the Hero or add up to 5 body blocks, but they **cannot** reorder the Hero below the products, preserving the design system's integrity perfectly.
+Blender Next reads this schema shape and locks the layout structure in the editor panel. Editors can modify the contents of the Hero or add up to 5 body blocks, but they cannot reorder the Hero below the products, preserving the design system's integrity perfectly.

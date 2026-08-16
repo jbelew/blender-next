@@ -1,59 +1,60 @@
 # Design System Strategy: Why Shadcn UI?
 
-For a schema-validated, Git-backed layout engine like **Blender Next**, the choice of UI library directly impacts visual rendering efficiency, data-binding capabilities, and bundle size performance. 
+Choosing a UI library for a dynamic, schema-validated layout engine like **Blender Next** directly affects page rendering speed, layout data bindings, and client-side bundle size. 
 
-This document outlines why Blender Next chose **Shadcn UI** (Radix UI + Tailwind CSS) over traditional pre-compiled design system frameworks (like Material UI (MUI), Chakra UI, or Semantic UI).
-
----
-
-## 1. Code Ownership & Schema Bindings (The Primary Driver)
-
-To support visual data editing, storefront layout components must accept custom tracking properties (like the `bind()` data path mapper) and render custom elements (like spreading `data-blender-field` keys).
-
-*   **Pre-Compiled Libraries (e.g., MUI, Chakra)**: These libraries live inside `node_modules` as immutable compiled packages. To add custom attributes, you must write verbose wrappers around every imported element or attempt to inject props through complex custom theme overrides.
-*   **Shadcn UI Pattern**: Shadcn is not a dependency library; it is a CLI that copies raw component source code directly into your project's workspace (e.g. `src/components/ui/button.tsx`).
-*   **The Advantage**: Developers have **full ownership** of the component source code. We can modify the properties interface and spread custom attributes directly on the native HTML tags:
-    ```typescript
-    // We can directly extend the component's interface in our codebase:
-    export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-      bindField?: any; // Native Blender Next field data mapper
-    }
-    
-    // And spread it directly on the node:
-    <button {...bindField} {...props} />
-    ```
+Here is why we chose **Shadcn UI** (Radix UI + Tailwind CSS) over traditional, pre-compiled UI frameworks like Material UI (MUI), Chakra UI, or Semantic UI.
 
 ---
 
-## 2. Zero DOM-Pollution & Structural Layout Integrity
+## 1. Code Ownership & Schema Bindings
 
-Traditional database-backed CMS platforms and heavy UI frameworks often wrap components in helper containers (like layout wrappers or inline style providers) to hook up visual edits. This breaks CSS flexbox, grid alignments, and absolute positions.
+To map storefront elements to layout fields in edit mode, our components need to accept custom attributes (like `data-blender-field`).
 
-*   **Radix Headless Primitives**: Shadcn uses Radix UI primitives under the hood. Radix provides unstyled, accessible behavioral components that do not render wrapping nodes.
-*   **The Advantage**: Storefront markup remains clean. We spread Blender Next annotations on the exact native tags, guaranteeing the design system's layout structure and CSS flex/grid relationships remain unpolluted.
+*   **Pre-Compiled Libraries**: UI systems inside `node_modules` are immutable. Adding custom attributes means writing verbose wrapper layers around every element or overriding complex themes.
+*   **The Shadcn Approach**: Shadcn copies the raw component code directly into the workspace (e.g. `src/components/ui/button.tsx`).
+
+Because we own the component source files, we can extend the TypeScript interfaces and spread our metadata bindings directly on the native HTML tags:
+```typescript
+// We can directly extend the component's interface:
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  bindField?: any; // Native Blender Next field metadata mapper
+}
+
+// And spread it directly on the tag:
+<button {...bindField} {...props} />
+```
 
 ---
 
-## 3. High-Performance Code Splitting & Zero-Bloat Bundles
+## 2. Zero DOM Pollution & Styling Transparency
 
-Pre-compiled packaged libraries can easily bloat client-side bundles because importing a single complex component can pull in massive transitive theme engines, context providers, or large icon sets.
+Traditional CMS platforms often inject helper divs to outline selected visual blocks. This breaks flexbox, CSS grid alignments, and absolute positioning.
 
-*   **Fine-Grained Dependencies**: In Shadcn, each component is a single file importing only what it needs (e.g. just `@radix-ui/react-accordion` for accordions).
-*   **The Advantage**: Next.js 16 Turbopack can optimize and code-split component code on-demand. If a page template only loads a `Hero` block, the browser client never loads code for product listings or accordions.
+Shadcn uses Radix UI primitives under the hood. Radix provides unstyled, accessible behavioral components that do not render wrapping layout container nodes. This keeps the storefront DOM clean and ensures our layout configurations don't break CSS grids.
+
+---
+
+## 3. On-Demand Code Splitting
+
+Importing components from pre-compiled libraries often pulls in transitively imported utility functions, icon sets, or theme context providers, inflating the client bundle.
+
+Shadcn components import only their immediate Radix dependencies. This allows Next.js 16 Turbopack to code-split component bundles on-demand. If a page template only uses a `Hero` block, the browser client never loads code or styles for product listings or other unused elements.
 
 ---
 
 ## 4. CSS Custom Property Theme Integration
 
-*   **Standard CSS Variables**: Shadcn UI relies on standard CSS variable custom properties (`var(--background)`, `var(--radius-md)`) rather than CSS-in-JS style objects.
-*   **The Advantage**: Blender Next maps layout tokens directly to Shadcn styles inside a single, central [`globals.css`](../apps/storefront/src/app/globals.css) sheet. Rebranding the entire design system (colors, borders, typography, spacing) requires zero JavaScript modifications.
+Instead of relying on complex JS-in-CSS configuration objects or custom provider tags, Shadcn UI styling maps directly to standard CSS variable custom properties (`var(--background)`, `var(--radius-md)`).
+
+We define all layout parameters inside a single stylesheet: [`globals.css`](../apps/storefront/src/app/globals.css). Rebranding the entire storefront takes a few CSS variable updates, with zero JavaScript modifications.
 
 ---
 
-## 5. Asteryx vs. Shadcn UI (The LLM-Friendliness Trade-off)
+## 5. What About Asteryx?
 
-*   **What is Asteryx**: Asteryx is a declarative styling/component system designed specifically to be "LLM friendly," enabling AI coding assistants to generate layouts and modify properties reliably due to its highly structured, state-machine-backed configuration patterns.
-*   **Why We Didn't Choose It**:
-    1.  **Ecosystem Maturity & Developer Familiarity**: Shadcn UI has a massive developer community and extensive copy-paste resources. For enterprise projects, selecting standard frameworks that developers already know speeds up onboarding and recruitment compared to niche AI-first tools.
-    2.  **Next.js 16 / React Server Components Integration**: Shadcn components are lightweight and compatible with React Server Components (RSC) out-of-the-box. Asteryx's heavy use of client-side state machine configurations limits server-side rendering optimization.
-    3.  **Local Codebase-Level LLM Friendliness**: While Asteryx has highly structured schema representations, **Shadcn is also highly LLM-friendly**. Because the source code for every component is written directly in the project (rather than pre-compiled inside `node_modules`), AI coding assistants (like Antigravity) can read, modify, and style component files natively without library constraints.
+Asteryx is a declarative component system designed to be highly "LLM friendly," meaning AI coding assistants can generate layouts and write styles easily because behaviors are mapped to predictable configurations.
+
+We decided not to choose Asteryx for a few reasons:
+*   **Next.js 16 Server Components Support**: Shadcn components are fully compatible with React Server Components (RSC) out-of-the-box. Asteryx relies heavily on client-side state machine scripts, which limits server-side rendering performance.
+*   **Familiarity and Ecosystem**: Shadcn UI has a massive developer community. Hiring and onboarding developers who already know Shadcn and Tailwind is straightforward, whereas Asteryx introduces a niche toolchain learning curve.
+*   **Local Code is Already AI-Friendly**: While Asteryx has structured UI states, **Shadcn is also highly LLM-friendly**. Because the source code for every component lives directly in the workspace, AI assistants (like Antigravity) can read, modify, and style component files natively without library constraints.

@@ -1,50 +1,41 @@
-# Blender Next: Enterprise Database Scaling Strategy
+# Blender Next: Database Scaling Strategy
 
-If Blender Next outgrows its Git flat-file storage model, we must transition to a highly available, scalable, and secure database layer. Since e-commerce page builder data is hierarchical (nested blocks with dynamic schemas) and requires campaign branching, the target database must excel at document storage, concurrency control, and revision management.
+If Blender Next outgrows its Git flat-file setup, we need to move the layout data to a database. Because our layout files are hierarchical (nested component arrays) and rely on branching, the target database needs to handle JSON columns easily, support locking, and allow revision track merges.
 
-This document analyzes the top enterprise database candidates to replace Git.
-
----
-
-## 1. Top Enterprise Database Recommendations
-
-### A. PlanetScale / Vitess (Distributed SQL with Native Schema Branching) — *Recommended for Git Alignment*
-*   **Why it fits**: PlanetScale is built on Vitess (the clustering system that powers YouTube's database). Crucially, PlanetScale implements a **native database branching workflow**. Developers and CMS admins can create schema/data branches, make changes in isolation, and open a "Deploy Request" to merge changes back to the production branch—replicating the Git PR model exactly.
-*   **Key Strengths**:
-    *   Horizontal scalability (sharding) without application-level logic changes.
-    *   No-downtime schema migrations.
-    *   Excellent support for JSON column types to store dynamic layout arrays.
-
-### B. MongoDB Atlas (The Enterprise Document Standard) — *Recommended for JSON Flexibility*
-*   **Why it fits**: Blender Next’s layout models are dynamic JSON documents. MongoDB is the industry-standard document database, meaning Zod schemas map directly to collections without translation layers.
-*   **Key Strengths**:
-    *   **JSON Native**: Storing, indexing, and querying nested block arrays is seamless.
-    *   **Optimistic Concurrency Control (OCC)**: Built-in write version checks prevent editor overwrite conflicts.
-    *   **Enterprise Security**: Active Directory/LDAP integration, encryption-at-rest, and granular collection-level role access (RBAC).
-    *   **Branching implementation**: We can model campaigns using a versioned collection structure (e.g. storing delta edits in a `campaign_drafts` collection and writing them to the main `pages` collection upon publication approval).
-
-### C. PostgreSQL / Amazon Aurora (The Pragmatic Enterprise Standard)
-*   **Why it fits**: PostgreSQL is the gold standard for relational enterprise engines. With its highly optimized `JSONB` data type, Postgres can store, index, and query dynamic layouts with performance matching dedicated document stores.
-*   **Key Strengths**:
-    *   **Row-Level Security (RLS)**: Solves the CMS security drawback by restricting edits at the database connection level based on user identity.
-    *   **Transactional Rigor**: Strong ACID compliance ensures layout writes never corrupt page structures.
-    *   **Temporal Table Support**: Supports historical tracking, making audit rollbacks and revision history simple to implement.
+Here is an analysis of database options that fit this model.
 
 ---
 
-## 2. Comparative Matrix
+## 1. Database Options
 
-| Database Option | Data Model | Branching Concept Alignment | Concurrency Control | Security & RBAC | Enterprise Availability |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **PlanetScale** | Relational + JSON | **High** (Native Deploy Requests/Branches) | Strong (ACID Transactions) | Excellent | High (Multi-region Vitess) |
-| **MongoDB Atlas** | Document (BSON) | **Medium** (Requires versioned records) | Strong (Version/Timestamp OCC) | Excellent (LDAP/Granular RBAC) | High (Multi-cloud clusters) |
-| **PostgreSQL** | Relational + `JSONB` | **Medium** (Requires temporal/delta tables) | Strong (MVCC + ACID) | Superior (Row-Level Security) | High (AWS Aurora Serverless) |
+### A. PlanetScale / Vitess (Distributed SQL with Branching)
+PlanetScale is built on Vitess, the MySQL scaling layer. What makes it a great fit is its **native schema branching workflow**. Developers and CMS editors can spin up schema branches, make changes in isolation, and open a "Deploy Request" to merge layout changes back to production. This behaves exactly like Git's branch-and-PR model.
+*   **Best for**: Keeping the Git branching mental model alive at database scale.
+*   **Key points**: Handles horizontal sharding automatically, supports zero-downtime migrations, and query speeds are high on JSON column types.
+
+### B. MongoDB Atlas (Document Store)
+Our page layouts are dynamic JSON arrays. MongoDB is document-native, meaning Zod schemas map directly to database documents without any translation layers.
+*   **Best for**: JSON schema flexibility.
+*   **Key points**: Storing and querying nested blocks arrays is native. It supports Optimistic Concurrency Control (OCC) using version numbers to prevent editors from overwriting each other's changes.
+
+### C. PostgreSQL / Amazon Aurora (Relational + JSONB)
+PostgreSQL handles dynamic layouts using the highly optimized `JSONB` data type. It matches document stores in read performance while keeping the reliability of a relational engine.
+*   **Best for**: Granular security and auditing.
+*   **Key points**: Supports Row-Level Security (RLS) to enforce edit access permissions on specific page prefixes. It has native support for temporal tables, which makes version history and rollbacks easy to implement.
 
 ---
 
-## 3. Migration Architecture Blueprint (MongoDB Example)
+## 2. Comparison
 
-When migrating from Git flat-files to MongoDB, the backend routes shift from filesystem access to database operations, while keeping Zod validation identical:
+*   **PlanetScale**: Relational + JSON. High branching alignment (Deploy Requests). Strong transactions. High availability via Vitess.
+*   **MongoDB Atlas**: Document (BSON). Medium branching alignment (requires versioned records). Strong version-based locking. High availability via Atlas clusters.
+*   **PostgreSQL**: Relational + JSONB. Medium branching alignment (requires temporal tables). Strong MVCC locking. High availability via RDS/Aurora.
+
+---
+
+## 3. Migration Example (MongoDB)
+
+When moving from flat-files to MongoDB, the backend routes shift from filesystem calls to database queries, while the validation logic remains in the same co-located Zod schemas:
 
 ```typescript
 // apps/storefront/src/app/api/blender/route.ts
@@ -59,10 +50,10 @@ export async function POST(request: Request) {
   const pages = db.collection('pages');
   
   if (action === 'save') {
-    // 1. Validate payload using identical co-located Zod schemas
+    // Validate the raw data against identical Zod definitions
     const parsedData = PageSchema.parse(data);
     
-    // 2. Write to campaign namespace or production collection
+    // Save to the campaign namespace or write directly to production
     if (campaignId) {
       await db.collection('campaign_drafts').updateOne(
         { pageId: itemId, campaignId },

@@ -1,45 +1,51 @@
 # Blender Next: Architectural Trade-offs & Limitations
 
-While a Git-backed, code-first layout engine like **Blender Next** offers massive advantages for developer experience, type safety, and DOM performance, it introduces significant trade-offs at scale. This document provides an objective analysis of the core limitations, security risks, and operational bottlenecks of this architectural approach.
+A Git-backed, code-first layout engine makes life easier for developers and improves page-load performance, but it introduces real problems at scale. This document breaks down the core limitations, security risks, and operational bottlenecks of this approach.
 
 ---
 
-## 1. Concurrency & Merge Conflict Bottlenecks (Write Scale)
+## 1. Concurrency and Merge Conflicts
 
-*   **The Flaw**: Databases excel at high-frequency concurrent writes. Git does not. If multiple content editors modify different sections of the same page layout simultaneously on a shared campaign branch, Git will reject concurrent pushes, resulting in write conflicts.
-*   **The Impact**: Non-technical content editors cannot resolve Git merge conflicts. Without complex custom locking systems (e.g. pessimistic locking APIs) or automated sub-branching/rebase orchestrations on the backend, editor productivity will grind to a halt in multi-editor organizations.
+Databases are built for high-frequency concurrent writes. Git is not. If two editors try to modify the same page layout on a shared campaign branch at the same time, Git will reject the second push, creating a merge conflict.
+
+Because non-technical editors cannot resolve Git conflicts, write scaling is highly constrained. Without implementing custom page locking APIs or automated rebasing on the backend, editor productivity will stall in multi-editor teams.
 
 ---
 
 ## 2. The Distributed State Problem (CMS vs. PIM Sync)
 
-*   **The Flaw**: There are two separate systems of record: Git (holding the editorial layout skeletons) and a transactional database/PIM (holding inventory, catalog pricing, and promotions). 
-*   **The Impact**: Launching a campaign requires a "two-phase commit" across disconnected systems. If the campaign Git branch merges to `main` successfully, but the database update to active product listings fails (or vice versa), the storefront falls into an inconsistent state (rendering dead layouts or missing catalog blocks).
+In this architecture, you run two separate systems of record: Git (holding the page layout structures) and a transactional database or PIM (holding product catalogs, pricing, and stock levels).
+
+Launching a campaign requires updating both systems at the same time. If the Git branch merges successfully but the PIM database update fails, the storefront enters an inconsistent state—like rendering campaign hero banners for products that do not exist or are out of stock.
 
 ---
 
-## 3. Security & Code-Injection Risks (Privilege Escalation)
+## 3. Security and Code-Injection Risks
 
-*   **The Flaw**: In Blender Next, **code and content live in the same Git repository**. The CMS web API server must possess write credentials (SSH keys or OAuth tokens) to commit files back to the repository.
-*   **The Impact**: If an editor's dashboard session is compromised, or if the visual editor's input parsing is bypassed, a malicious actor could write edits that modify actual application source code (e.g. rewriting `/apps/storefront/src/app/[slug]/page.tsx` or package files). This is a massive privilege escalation vector compared to traditional Headless CMS platforms where content data is strictly isolated from application runtime source code.
+In Blender Next, application code and page layout content live in the same Git repository. This means the CMS web API server must have write access keys (SSH keys or OAuth tokens) to commit layout files back to the repo.
+
+If an editor's session is compromised, or if the API's input validation is bypassed, an attacker can push edits that modify actual application source code (like rewriting route files or components). This is a severe privilege escalation vector compared to traditional database-backed CMS platforms, which strictly isolate content data from application source files.
 
 ---
 
-## 4. Repository Bloat & Git Performance
+## 4. Repository Bloat and Git Performance
 
-*   **The Flaw**: Every single typo fix, block reordering, or draft save creates a Git commit. A busy marketing team can easily generate tens of thousands of commits per year.
-*   **The Impact**: The local `.git` history database will bloat rapidly. Over time, standard developer Git operations (like `git status`, `git checkout`, and initial clones in CI/CD pipelines) will slow down due to the massive commit graph size, degrading overall developer experience.
+Every typo fix, block reordering, or draft save creates a Git commit. A busy marketing team can generate tens of thousands of commits a year.
+
+As a result, the local `.git` directory will bloat. Over time, standard Git operations (like `git status`, `git checkout`, and initial repository clones in CI/CD pipelines) will slow down due to the size of the commit graph, degrading the developer experience.
 
 ---
 
 ## 5. Binary Access Control (RBAC Limitations)
 
-*   **The Flaw**: Traditional headless CMS platforms support granular Role-Based Access Control (e.g., Jane can only edit blog posts; John can only edit home page banners). Git repository write permissions are typically binary (you either have write permission to a directory/branch or you don't).
-*   **The Impact**: Enforcing fine-grained organizational permission structures requires building a custom validation proxy inside the CMS middleware, as Git cannot natively enforce row-level or field-level edit restrictions for individual writers.
+Traditional headless CMS platforms support granular, field-level Role-Based Access Control (e.g. allowing Jane to edit only blog posts, and John to edit only hero copy). Git write permissions, however, are binary. You either have write access to the branch or folder, or you do not.
+
+Enforcing granular editing permissions requires building a custom validation proxy inside the CMS middleware, as Git cannot natively restrict access at the row or field level.
 
 ---
 
-## 6. Developer Dependency (Rigid Extension Models)
+## 6. Rigid Extension Models (Developer Dependency)
 
-*   **The Flaw**: Since block validation schemas are co-located in React code (Zod), content editors cannot create new layout models, custom attributes, or content types independently in the web dashboard.
-*   **The Impact**: Every marketing request for a new visual component or structural block requires a developer to write a React component, define a Zod schema, and commit it to code. This can create a bottleneck for marketing teams used to building ad-hoc landing page structures.
+Because block schemas are co-located in React code using Zod, editors cannot create new block types, custom layout patterns, or configuration fields independently in the dashboard.
+
+Every request for a new visual component or structural block requires a developer to write the React code, define the Zod validation rules, and push the change to Git. This creates a dependency bottleneck for marketing teams used to building ad-hoc landing page structures.

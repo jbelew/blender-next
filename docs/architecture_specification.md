@@ -1,37 +1,37 @@
 # Blender Next: Technical Architecture Specification
 
-This document outlines the technical architecture, design decisions, and schema validation specifications for **Blender Next**—a Git-backed, headless layout engine custom-engineered for **Next.js 16 (App Router)**, **React 19**, and **E-commerce Monorepos**.
+This specification covers the technical architecture and schema validation details for **Blender Next**—a Git-backed layout engine built for **Next.js 16 (App Router)**, **React 19**, and monorepos.
 
 ---
 
-## Table of Contents
-1. [Core Philosophy & Architecture](#1-core-philosophy--architecture)
-2. [Monorepo Workspace Blueprint](#2-monorepo-workspace-blueprint)
-3. [Data Bindings & Iframe Event Bridge](#3-data-bindings--iframe-event-bridge)
-4. [Co-located Block Schemas (Zod)](#4-co-located-block-schemas-zod)
-5. [Page Templates & Discriminated Schema Unions](#5-page-templates--discriminated-schema-unions)
-6. [Dynamic Component Registry Map & Code-Splitting](#6-dynamic-component-registry-map--code-splitting)
-7. [CSS Custom Property Theme System](#7-css-custom-property-theme-system)
-8. [The CMS vs. PIM Boundary (E-commerce)](#8-the-cms-vs-pim-boundary-e-commerce)
-9. [Next.js 16 & React 19 Considerations](#9-next-js-16--react-19-considerations)
+## Table of contents
+1. [Core philosophy](#1-core-philosophy)
+2. [Monorepo structure](#2-monorepo-structure)
+3. [Visual editor event bridge](#3-visual-editor-event-bridge)
+4. [Co-located block schemas](#4-co-located-block-schemas)
+5. [Page templates and discriminated unions](#5-page-templates-and-discriminated-unions)
+6. [Dynamic component registry](#6-dynamic-component-registry)
+7. [CSS variable theme system](#7-css-variable-theme-system)
+8. [The CMS vs. PIM boundary](#8-the-cms-vs-pim-boundary)
+9. [Next.js 16 & React 19 considerations](#9-nextjs-16--react-19-considerations)
 
 ---
 
-## 1. Core Philosophy & Architecture
+## 1. Core philosophy
 
-Traditional database-driven Headless CMS platforms introduce structural developer friction (e.g., maintaining schemas in both database tables and UI code) and pollute the client-side DOM with wrapping alignment divs that break CSS flexbox, grids, and absolute positioning relationships.
+Standard headless CMS setups force you to sync schemas between database dashboards and front-end code. They also pollute the DOM with nested helper divs that break flexbox and CSS grid layouts.
 
-**Blender Next** solves these issues through:
-*   **Git as the Single Source of Truth**: Layout states are represented as clean flat-file JSON blocks in Git, allowing developers and editors to leverage standard versioning, rollbacks, and code-review PR branching.
-*   **Code-First Schema Co-location**: Schemas are declared right next to the JSX elements using **Zod**, keeping content rules in sync with component code changes.
-*   **DOM Layout Preservation**: Clean data-attribute annotations (`data-blender-field`) map storefront components directly to schema properties without injecting wrapping helper divs, protecting styling grids.
-*   **Next.js Server Component Native**: Generates statically optimized routes for storefront visitors, removing CMS parser bundle weight from client-side bundles.
+Blender Next addresses these issues through:
+*   **Git-backed layouts**: Page structures are stored as flat JSON files in Git. This lets developers and content creators use standard branching, rollbacks, and Pull Request workflows.
+*   **Co-located schemas**: Layout schemas are defined next to React components using **Zod**, keeping content validation in sync with code updates.
+*   **Clean DOM output**: Standard HTML attributes (`data-blender-field`) map storefront components directly to schema fields. We do not inject layout-breaking helper container divs.
+*   **Server-side performance**: Storefront pages render as Next.js Server Components, removing CMS parser bundle weight from the client.
 
 ---
 
-## 2. Monorepo Workspace Blueprint
+## 2. Monorepo structure
 
-Blender Next uses workspaces to decouple parsing engines and storefront runtimes:
+We isolate the core packages from the storefront implementation using Bun workspaces:
 
 ```text
 blender-next/
@@ -39,27 +39,27 @@ blender-next/
 │   └── storefront/                 # Next.js 16 Storefront (Turbopack, React 19)
 │       ├── src/
 │       │   ├── app/
-│       │   │   ├── [slug]/page.tsx # Dynamic loader (SSR/ISR, async params)
-│       │   │   ├── admin/page.tsx  # Houses visual editor frame & editing sidebar
-│       │   │   └── globals.css     # Global CSS Variable Design System
-│       │   ├── components/         # Co-located Page Builder Blocks
+│       │   │   ├── [slug]/page.tsx # Dynamic layout route (SSR/ISR, async params)
+│       │   │   ├── admin/page.tsx  # Iframe edit panel & sidebar form
+│       │   │   └── globals.css     # CSS variable custom properties
+│       │   ├── components/         # Page builder block components
 │       │   │   ├── Hero/
-│       │   │   │   └── Hero.tsx    # JSX layout + co-located HeroSchema
+│       │   │   │   └── Hero.tsx    # Component JSX + HeroSchema
 │       │   │   ├── Text/
-│       │   │   │   └── Text.tsx    # JSX layout + co-located TextSchema
+│       │   │   │   └── Text.tsx    # Component JSX + TextSchema
 │       │   │   └── ProductGrid/
-│       │   │       └── ProductGrid.tsx # JSX layout + co-located ProductGridSchema
-│       │   ├── templates/          # Structural Page Shell Layouts
-│       │   │   ├── LandingTemplate/# Full-width page layout template
-│       │   │   └── BlogTemplate/   # Split sidebar page layout template
+│       │   │       └── ProductGrid.tsx # Component JSX + ProductGridSchema
+│       │   ├── templates/          # Visual page shells
+│       │   │   ├── LandingTemplate/# Full-width page shell
+│       │   │   └── BlogTemplate/   # Split sidebar page shell
 │       │   ├── schemas/
-│       │   │   └── page.ts         # Composes master discriminated schema union
-│       │   └── blender.ts          # Entrypoint collection registrar
+│       │   │   └── page.ts         # Master page schema definition
+│       │   └── blender.ts          # Page layouts configuration
 ├── packages/
-│   ├── core/                       # File loaders, schema parsers, SQLite cache engines
-│   └── react/                      # useBlender preview hooks & event bridge
+│   ├── core/                       # JSON file loaders & Zod parsers
+│   └── react/                      # Preview hooks & iframe postMessage listener
 ├── content/
-│   └── pages/                      # Flat-file layout database
+│   └── pages/                      # Git-backed JSON layout files
 │       ├── home.json
 │       └── about.json
 └── package.json
@@ -67,30 +67,30 @@ blender-next/
 
 ---
 
-## 3. Data Bindings & Iframe Event Bridge
+## 3. Visual editor event bridge
 
-Visual editing layouts require mapping rendered HTML nodes directly to parent layout configurations. Blender Next establishes a clean, decoupled bridge using:
+To support inline editing, we map DOM elements back to JSON config files using simple annotations and iframe messaging:
 
-### A. Element Binding Attributes
-Storefront elements are annotated with descriptive data-path selectors using a unified `bind()` utility helper:
+### A. Element binding attributes
+We annotate storefront markup using a `bind()` utility:
 ```tsx
 <h2 {...bind(`blocks.${index}.data.title`)}>
   {title}
 </h2>
 ```
-This resolves to a clean DOM property: `data-blender-field="blocks.0.data.title"`. 
+This resolves to a standard browser attribute: `data-blender-field="blocks.0.data.title"`. 
 
-### B. DOM Layout Preservation
-By forwarding these target keys as custom attributes rather than wrapping JSX elements in framework container helper `div` elements, the storefront's native CSS flexbox, flex-grow, and CSS grid alignments remain completely unpolluted.
+### B. Clean markup
+Forwarding these keys as custom attributes ensures that we do not need to wrap JSX tags in utility container divs. Layout grids, absolute positions, and flex properties remain unaffected.
 
-### C. Standard Iframe Event Loop
-During visual preview sessions, updates are bound dynamically using standard HTML5 `window.postMessage` frame bindings. Changes made in the admin form dispatch updates to the preview frame, updating the state in real-time.
+### C. Iframe messaging loop
+In edit mode, visual updates sync using `window.postMessage` frame bindings. Typing in the admin sidebar sends updates directly to the preview frame, updating the React state in real-time.
 
 ---
 
-## 4. Co-located Block Schemas (Zod)
+## 4. Co-located block schemas
 
-Instead of maintaining a separate CMS database schema, validation contracts live directly inside their corresponding React components:
+Instead of managing database column definitions, validation rules live inside the React component files:
 
 ```typescript
 // apps/storefront/src/components/Hero/Hero.tsx
@@ -117,12 +117,12 @@ export const ProductGridSchema = z.object({
 
 ---
 
-## 5. Page Templates & Discriminated Schema Unions
+## 5. Page templates and discriminated unions
 
-Rather than allowing arbitrary block lists, pages are structured via **Templates** (e.g. `LandingTemplate` vs. `BlogTemplate`). This enforces design consistency and block placement safety.
+Pages are governed by specific structural templates (e.g. `LandingTemplate` or `BlogTemplate`) to restrict which blocks are allowed where.
 
-### A. Co-located Template Schemas
-Each template script defines which layout properties it requires and restricts which blocks are allowed:
+### A. Template schemas
+Each template file defines its custom metadata and the components it permits:
 
 ```typescript
 // apps/storefront/src/templates/BlogTemplate/BlogTemplate.tsx
@@ -130,7 +130,6 @@ import { z } from 'zod';
 import { HeroSchema } from '../../components/Hero/Hero';
 import { TextSchema } from '../../components/Text/Text';
 
-// The Blog Template requires author bio metadata and forbids ProductGrid blocks
 export const BlogTemplateSchema = z.object({
   title: z.string(),
   template: z.literal('blog'),
@@ -144,8 +143,8 @@ export const BlogTemplateSchema = z.object({
 });
 ```
 
-### B. Discriminated Union Parsing
-The master schema validator inside [`src/schemas/page.ts`](../apps/storefront/src/schemas/page.ts) aggregates these templates using a Zod discriminated union. When a layout is loaded, Zod matches the `"template"` property first and validates the layout blocks against that specific template's rules:
+### B. Discriminated union parsing
+The master validator inside [`src/schemas/page.ts`](../apps/storefront/src/schemas/page.ts) aggregates these templates using a Zod discriminated union. When parsing a page, Zod checks the `template` key first, then runs validation against that template's rules:
 
 ```typescript
 import { z } from 'zod';
@@ -160,11 +159,11 @@ export const PageSchema = z.discriminatedUnion('template', [
 
 ---
 
-## 6. Dynamic Component Registry Map & Code-Splitting
+## 6. Dynamic component registry
 
-Eagerly importing dozens of page blocks at the top of a page client forces the browser to evaluate the bundle for all blocks, even if the current page only uses one. 
+Importing all blocks eagerly at the top of a page forced Turbopack to compile every script bundle, slowing down initial load times.
 
-Blender Next maps layout blocks dynamically using **Next.js Dynamic Imports (`next/dynamic`)**, loading JS bundles on-demand to keep initial load sizes minimal:
+Blender Next loads layout components on-demand using **Next.js Dynamic Imports (`next/dynamic`)**:
 
 ```tsx
 // apps/storefront/src/components/DynamicPageClient.tsx
@@ -195,13 +194,13 @@ export default function DynamicPageClient({ initialData, slug }: DynamicPageClie
 
 ---
 
-## 7. CSS Custom Property Theme System
+## 7. CSS variable theme system
 
-To separate core presentation markup from React components, Blender Next implements a central **CSS Variable Theme System** inside [`src/app/globals.css`](../apps/storefront/src/app/globals.css). Hard-coded spacing, shadows, and colors are replaced by design tokens:
+To separate block code from raw styling values, we define layout styles globally in [`src/app/globals.css`](../apps/storefront/src/app/globals.css):
 
 ```css
 :root {
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: system-ui, -apple-system, sans-serif;
   --background: #fcfcfd;
   --foreground: #111827;
   
@@ -215,31 +214,31 @@ To separate core presentation markup from React components, Blender Next impleme
   --radius-lg: 16px;
   
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.04);
 }
 ```
-Components consume these tokens cleanly using CSS properties:
+
+Components reference these custom properties directly:
 ```tsx
 <div style={{ background: 'var(--card-background)', borderRadius: 'var(--radius-lg)' }} />
 ```
 
 ---
 
-## 8. The CMS vs. PIM Boundary (E-commerce)
+## 8. The CMS vs. PIM boundary
 
-To scale visual editing inside active storefronts without introducing Git concurrency write bottlenecks, we enforce a strict separation of concerns:
+To avoid database bottlenecks and keep page loads fast, we decouple layout skeletons from product catalogs:
 
-*   **PIM (Product Information Manager)**: Dedicated systems (e.g., Shopify, Medusa) manage high-frequency transactional data like live price points, reviews, categories, and inventory.
-*   **Blender Next**: Manages only the **editorial layout skeleton metadata** (e.g., configuring hero images, adding promo paragraphs, and placing collection grid slugs).
+*   **PIM (Product Information Manager)**: Systems like Shopify or Medusa manage dynamic checkout state, inventory levels, pricing, and ratings.
+*   **Blender Next**: Manages only page skeletons (hero images, copywriting paragraphs, and catalog grids reference slugs).
 
-During render time, Server Components combine the static CMS skeleton with live PIM fetch calls:
+At request time, Server Components combine the static layout configuration with live PIM queries:
 
 ```typescript
 // apps/storefront/src/components/ProductGrid/ProductGrid.tsx
 import { fetchCommerceProducts } from '../../lib/commerce';
 
 export default function ProductGrid({ title, collectionId, limit }) {
-  // Pulls live catalog states at request-time based on collectionId stored in CMS
+  // Fetch live products based on the PIM collection ID saved in CMS JSON
   const products = fetchCommerceProducts(collectionId, limit);
   
   return (
@@ -255,13 +254,13 @@ export default function ProductGrid({ title, collectionId, limit }) {
 
 ---
 
-## 9. Next.js 16 & React 19 Considerations
+## 9. Next.js 16 & React 19 considerations
 
-Upgrading the showcase storefront to Next.js 16 and React 19 requires accounting for the following breaking architectural changes:
+Upgrading the storefront storefront to Next.js 16 and React 19 requires managing these changes:
 
-*   **Asynchronous Dynamic Parameters**: Page `params` and `searchParams` are Promises. They must be explicitly typed as `Promise<T>` and unwrapped using `await params` in Server Component loaders.
-*   **Bypassing Cache Locks**: Next.js 16 aggressively caches file fetches. To ensure local editor saves show up instantly during preview and dashboard sessions, page loaders and API handlers declare dynamic rendering:
+*   **Asynchronous routing params**: Dynamic page `params` and `searchParams` are Promises. They must be typed as `Promise<T>` and resolved using `await params` in Server Components.
+*   **Next.js dynamic routing**: Next.js 16 caches file reads aggressively. To ensure editor saves render instantly in preview dashboards, layout loaders use:
     ```typescript
     export const dynamic = 'force-dynamic';
     ```
-*   **Types Syncing**: React 19 development typings (`@types/react`) must be locked at the workspace package level to prevent TypeScript compiler definition overrides.
+*   **React 19 types configuration**: React 19 types must be explicitly locked in monorepo workspaces to prevent typings drift in external dependencies.
