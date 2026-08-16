@@ -51,6 +51,7 @@ blender-next/
 ## Documentation
 
 *   [**Technical architecture specification**](./docs/architecture_specification.md): Specifications for dynamic component maps, code-splitting registries, and global CSS theme variables.
+*   [**Engineering roadmap**](./docs/roadmap.md): Architectural roadmap tracking completed security patches and future implementation milestones.
 *   [**Git-backed campaign workflows**](./docs/git_campaign_workflows.md): Managing campaigns using Git branches and Pull Requests.
 *   [**Scaling strategy (1,000s of pages)**](./docs/scaling_strategy.md): Local SQLite caching, Next.js ISR pre-rendering, and paginated APIs.
 *   [**Block cardinality and constraints**](./docs/block_cardinality_and_constraints.md): Enforcing template slots and quantity limits using Zod validation.
