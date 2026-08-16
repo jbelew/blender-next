@@ -1,0 +1,11 @@
+{
+  "name": "blender-next-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "bun --filter '*' dev"
+  }
+}

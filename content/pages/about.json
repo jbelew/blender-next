@@ -1,0 +1,15 @@
+{
+  "title": "About",
+  "template": "blog",
+  "authorName": "UnCMS Editorial",
+  "blocks": [
+    {
+      "type": "Hero",
+      "data": {
+        "title": "Welcome to ABOUT",
+        "subtitle": "Edit this subtitle or click below to save.",
+        "ctaText": "Learn More"
+      }
+    }
+  ]
+}

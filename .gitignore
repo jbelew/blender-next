@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+jspm_packages/
+web_modules/
+
+# Next.js Build Output
+.next/
+out/
+
+# Production builds
+dist/
+build/
+
+# Local env files
+.env
+.env*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor configurations
+.vscode/
+.idea/
+
+# Bun lock and run files
+.bun/
