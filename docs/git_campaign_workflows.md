@@ -56,11 +56,11 @@ This setup is clean on paper, but you have to account for a few practical proble
     *   **Pessimistic Locking**: Lock pages in the editor UI (using Redis or a simple database state) when someone is editing, preventing others from making concurrent changes.
     *   **Sub-branching**: Have the server commit changes to personal draft branches (e.g. `draft/john/summer-sale-hero`) and handle auto-merging behind the scenes.
 
-### B. The PIM Catalog Sync Gap
-*   **The Problem**: Git manages the *layout skeleton*, but it does not control the *live PIM database state*. If a campaign banner highlights a new product that is not yet published in Shopify or Medusa, the page will render blank or broken blocks.
+### B. The Marketplace Catalog Sync Gap
+*   **The Problem**: Git manages the *layout skeleton*, but it does not control the *live merchant catalog state*. If a campaign page references a new merchant or collection category that is not yet active in the marketplace registry, the preview frame will render empty grids or broken blocks.
 *   **The Workaround**:
-    *   **Align Schedules**: Ensure product catalog releases are scheduled to go live in the PIM at the same time the Git PR merges.
-    *   **Preview Bypass**: Configure storefront queries to pass catalog preview headers when rendering pages in preview environments.
+    *   **Align Schedules**: Ensure merchant menus or campaign promotions are scheduled to go live in the catalog services at the same time the Git PR merges.
+    *   **Preview Bypass**: Configure storefront queries to pass coordinates and preview credentials to fetch draft restaurant menu listings in preview environments.
 
 ### C. Build Queue Saturation
 *   **The Problem**: Saving layout tweaks every few minutes will trigger constant rebuilds, clogging the CI/CD pipeline and stalling preview generation.

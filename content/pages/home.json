@@ -1,27 +1,27 @@
 {
-  "title": "Welcome the Blender Next Prototype",
+  "title": "Local Marketplace Delivery",
   "template": "landing",
   "blocks": [
     {
       "type": "Hero",
       "data": {
-        "title": "Summer Collection 2026",
-        "subtitle": "Get up to 40% off on all activewear products starting tomorrow.",
-        "ctaText": "Shop the Big Sale",
-        "imageUrl": "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&q=80&w=600"
+        "title": "Late Night Cravings?",
+        "subtitle": "Get your favorite local food and groceries delivered to your door in minutes.",
+        "ctaText": "Order Delivery Now",
+        "imageUrl": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=600"
       }
     },
     {
       "type": "Text",
       "data": {
-        "content": "Blender Next is a fully open-source, Git-backed content management system designed to make building high-performance marketing landing pages simple. By combining Next.js Server Components with direct visual editing targeting local design files, Blender Next eliminates the performance bottlenecks of traditional database-driven headless solutions."
+        "content": "Blender Next is a Git-backed visual layout engine for Next.js 16 (Turbopack), React 19, and monorepos. Instead of syncing schemas between database dashboards and front-end code, Blender Next uses Zod schemas as the source of truth and stores layouts as flat JSON files in Git."
       }
     },
     {
       "type": "ProductGrid",
       "data": {
-        "title": "Staff Shoe Picks",
-        "collectionId": "footwear",
+        "title": "Trending Restaurants Near You",
+        "collectionId": "restaurants",
         "limit": 4
       }
     }

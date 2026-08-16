@@ -473,9 +473,9 @@ export default function AdminPage() {
                             }}
                             style={{ width: '100%', padding: '0.4rem', background: '#1f2937', border: 'none', borderRadius: '4px', color: 'white', boxSizing: 'border-box', cursor: 'pointer' }}
                           >
-                            <option value="">-- Select Collection --</option>
-                            <option value="activewear">Activewear Apparel (Shopify API)</option>
-                            <option value="footwear">Footwear & Sneakers (Shopify API)</option>
+                            <option value="">-- Select Category --</option>
+                            <option value="restaurants">Trending Restaurants (Merchant Menu API)</option>
+                            <option value="grocery">Grocery & Convenience (Merchant Menu API)</option>
                           </select>
                         </div>
  

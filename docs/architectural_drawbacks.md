@@ -12,11 +12,11 @@ Because non-technical editors cannot resolve Git conflicts, write scaling is hig
 
 ---
 
-## 2. The Distributed State Problem (CMS vs. PIM Sync)
+## 2. The Distributed State Problem (CMS vs. Marketplace Sync)
 
-In this architecture, you run two separate systems of record: Git (holding the page layout structures) and a transactional database or PIM (holding product catalogs, pricing, and stock levels).
+In this architecture, you run two separate systems of record: Git (holding the page layout structures) and the localized marketplace catalog database (holding restaurant listings, menus, operating hours, and geolocated delivery fees).
 
-Launching a campaign requires updating both systems at the same time. If the Git branch merges successfully but the PIM database update fails, the storefront enters an inconsistent state—like rendering campaign hero banners for products that do not exist or are out of stock.
+Launching a campaign requires updating both systems at the same time. If the Git branch merges successfully but the marketplace catalog service update fails, the storefront enters an inconsistent state—like rendering campaign category grids for restaurants that are currently closed or menu items that do not exist.
 
 ---
 

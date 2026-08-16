@@ -53,6 +53,7 @@ blender-next/
 *   [**Technical architecture specification**](./docs/architecture_specification.md): Specifications for dynamic component maps, code-splitting registries, and global CSS theme variables.
 *   [**Engineering roadmap**](./docs/roadmap.md): Architectural roadmap tracking completed security patches and future implementation milestones.
 *   [**Git-backed campaign workflows**](./docs/git_campaign_workflows.md): Managing campaigns using Git branches and Pull Requests.
+*   [**Scale viability (Git vs. DB)**](./docs/git_scaling_viability.md): Scale analysis on why Git is a proof of concept for localized marketplaces and how to transition to Server-Driven UI (SDUI) databases.
 *   [**Scaling strategy (1,000s of pages)**](./docs/scaling_strategy.md): Local SQLite caching, Next.js ISR pre-rendering, and paginated APIs.
 *   [**Block cardinality and constraints**](./docs/block_cardinality_and_constraints.md): Enforcing template slots and quantity limits using Zod validation.
 *   [**Architectural drawbacks and trade-offs**](./docs/architectural_drawbacks.md): Write scalability, security implications of code/content co-location, and local history size bloat.
@@ -61,13 +62,13 @@ blender-next/
 
 ---
 
-## CMS vs. PIM boundaries
+## CMS vs. Marketplace boundaries
 
 To scale storefronts safely, we enforce a strict separation of concerns:
-*   **PIM (Product Information Manager)**: Platforms like Shopify or Medusa manage dynamic transaction-driven states (prices, inventory, carts).
-*   **Blender Next**: Manages only the layout skeleton (configuring hero copy and placing grid collection slugs).
+*   **Marketplace Core / Menu Service (PIM)**: Localized transactional microservices handle delivery dispatch, order tracking, real-time coordinates routing, and merchant operating hours. The Menu Service acts as the Master Data Management (MDM) database for restaurant catalogs, menu specifications, and pricing.
+*   **Blender Next**: Manages only the layout skeleton of localized landing pages, restaurant categories, and editorial promotions (e.g. configuring promo banners and placing merchant category identifiers).
 
-At request time, Server Components combine the page structure with live PIM queries, rendering a single optimized page.
+At request time, Server Components combine the page structure with live localized menu queries, rendering a single optimized page.
 
 ---
 

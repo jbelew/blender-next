@@ -12,7 +12,7 @@ This specification covers the technical architecture and schema validation detai
 5. [Page templates and discriminated unions](#5-page-templates-and-discriminated-unions)
 6. [Dynamic component registry](#6-dynamic-component-registry)
 7. [CSS variable theme system](#7-css-variable-theme-system)
-8. [The CMS vs. PIM boundary](#8-the-cms-vs-pim-boundary)
+8. [The CMS vs. Commerce boundary](#8-the-cms-vs-commerce-boundary)
 9. [Next.js 16 & React 19 considerations](#9-nextjs-16--react-19-considerations)
 
 ---
@@ -224,21 +224,21 @@ Components reference these custom properties directly:
 
 ---
 
-## 8. The CMS vs. PIM boundary
+## 8. The CMS vs. Commerce boundary
 
-To avoid database bottlenecks and keep page loads fast, we decouple layout skeletons from product catalogs:
+To avoid database bottlenecks and keep page loads fast, we decouple layout skeletons from commerce catalogs:
 
-*   **PIM (Product Information Manager)**: Systems like Shopify or Medusa manage dynamic checkout state, inventory levels, pricing, and ratings.
+*   **Marketplace Engine / Menu Service (PIM)**: Custom real-time microservices that manage localized storefront logistics, dynamic store operating statuses, delivery dispatch routing, and real-time menu database constraints. The Menu Service acts as the Master Data Management (MDM) system for merchant catalog metadata, specifications, and restaurant menus.
 *   **Blender Next**: Manages only page skeletons (hero images, copywriting paragraphs, and catalog grids reference slugs).
 
-At request time, Server Components combine the static layout configuration with live PIM queries:
+At request time, Server Components combine the static layout configuration with live marketplace menu queries:
 
 ```typescript
 // apps/storefront/src/components/ProductGrid/ProductGrid.tsx
 import { fetchCommerceProducts } from '../../lib/commerce';
 
 export default function ProductGrid({ title, collectionId, limit }) {
-  // Fetch live products based on the PIM collection ID saved in CMS JSON
+  // Fetch live products based on the catalog collection ID saved in CMS JSON
   const products = fetchCommerceProducts(collectionId, limit);
   
   return (
