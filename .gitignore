@@ -26,3 +26,6 @@ Thumbs.db
 
 # Bun lock and run files
 .bun/
+
+# Agent integrations
+.agents/
