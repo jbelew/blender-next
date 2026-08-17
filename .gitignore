@@ -19,6 +19,7 @@ build/
 # OS files
 .DS_Store
 Thumbs.db
+email_draft.md
 
 # Editor configurations
 .vscode/

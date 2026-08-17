@@ -22,7 +22,23 @@ This document analyzes why Git fails for this use case and outlines the industry
 
 ---
 
-## 2. Where Git Does Fit (The Hybrid Model)
+## 2. The User Scale Boundary: Internal vs. External Merchants 
+
+Whether Git workflows can scale depends heavily on **who** is modifying the layouts:
+
+### Internal Corporate Workflow (Scalable)
+If the CMS is restricted to internal corporate users (e.g. 10-20 marketing managers, copywriters, and designers publishing high-level seasonal categories or landing promotions):
+*   **Git is highly viable**: Page locking can prevent concurrent write conflicts, and changes can go through developer code reviews via standard pull requests before deploying.
+
+### Self-Service Merchant Platform (Fails completely)
+If you open up layout editing to external merchants (e.g. 15,000+ restaurant owners independently changing their banners, adding logos, and modifying menu layouts):
+*   **Access Control Security Risks**: Git has binary repository write permissions. Granting 15,000 external users write access to a git repository is a security hazard. Restricting them to their own directories at the Git level requires building a complex intermediary authentication/validation proxy.
+*   **Write Collision Deadlocks**: With 15,000 merchants saving updates, parallel pushes will trigger constant write lock conflicts and git push rejections, halting layout saves.
+*   **Build Pipeline Saturation**: Every layout commit triggers a preview build or cache rebuild. 15,000 merchants editing profiles in parallel will saturate CI/CD preview pipelines, causing layout previews to lag by hours or fail.
+
+---
+
+## 3. Where Git Does Fit (The Hybrid Model)
 
 Even in enterprise marketplaces, Git is still used, but it is restricted to slow-changing assets:
 1.  **Application Code & Component Libraries**: React component files, styling variables, and Zod schemas live in Git and deploy via standard CI/CD.
@@ -30,7 +46,7 @@ Even in enterprise marketplaces, Git is still used, but it is restricted to slow
 
 ---
 
-## 3. The Enterprise Architecture: Server-Driven UI (SDUI)
+## 4. The Enterprise Architecture: Server-Driven UI (SDUI)
 
 To scale localized layout deliveries, enterprise systems use a **Server-Driven UI (SDUI)** architecture backed by document databases and in-memory caches:
 
