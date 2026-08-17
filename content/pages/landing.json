@@ -1,0 +1,41 @@
+{
+  "title": "Bella Italia Pizza",
+  "template": "merchant",
+  "merchantType": "Italian • Wood-Fired Pizza • Pasta",
+  "deliveryFee": "$1.99 Delivery",
+  "deliveryTime": "25-35 min",
+  "rating": "4.8 (500+ ratings)",
+  "blocks": [
+    {
+      "type": "Hero",
+      "data": {
+        "title": "Bella Italia Pizza",
+        "subtitle": "Authentic wood-fired Neapolitan pizza delivered directly to your doorstep.",
+        "ctaText": "View Menu Specials",
+        "imageUrl": "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=600"
+      }
+    },
+    {
+      "type": "Text",
+      "data": {
+        "content": "Family-owned and operated since 1994, Bella Italia uses traditional fermentation methods and imported Tipo 00 flour to bake our classic Neapolitan pizzas in our wood-fired brick oven at 900°F."
+      }
+    },
+    {
+      "type": "ProductGrid",
+      "data": {
+        "title": "Wood-Fired Pizzas & Specials",
+        "collectionId": "restaurants",
+        "limit": 2
+      }
+    },
+    {
+      "type": "ProductGrid",
+      "data": {
+        "title": "Featured Arrivals",
+        "collectionId": "grocery",
+        "limit": 2
+      }
+    }
+  ]
+}

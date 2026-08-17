@@ -62,6 +62,7 @@ export async function POST(request: Request) {
       // Create a new page with a default starter layout
       const defaultPage = {
         title: `New Page (${itemId})`,
+        template: 'landing' as const,
         blocks: [
           {
             type: 'Hero' as const,

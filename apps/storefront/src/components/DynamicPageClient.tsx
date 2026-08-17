@@ -8,7 +8,7 @@ import { BlenderPage } from '../blender';
 // Dynamic Page Template Registry (loads page shells on-demand via direct paths)
 const TemplateRegistry: Record<string, React.ComponentType<any>> = {
   landing: dynamic(() => import('../templates/LandingTemplate/LandingTemplate'), { loading: () => <p>Loading Page Layout...</p> }),
-  blog: dynamic(() => import('../templates/BlogTemplate/BlogTemplate'), { loading: () => <p>Loading Page Layout...</p> }),
+  merchant: dynamic(() => import('../templates/MerchantTemplate/MerchantTemplate'), { loading: () => <p>Loading Page Layout...</p> }),
 };
 
 interface DynamicPageClientProps {

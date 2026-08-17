@@ -51,7 +51,7 @@ blender-next/
 │       │   │       └── ProductGrid.tsx # Component JSX + ProductGridSchema
 │       │   ├── templates/          # Visual page shells
 │       │   │   ├── LandingTemplate/# Full-width page shell
-│       │   │   └── BlogTemplate/   # Split sidebar page shell
+│       │   │   └── MerchantTemplate/# Localized merchant menu layout
 │       │   ├── schemas/
 │       │   │   └── page.ts         # Master page schema definition
 │       │   └── blender.ts          # Page layouts configuration
@@ -119,25 +119,30 @@ export const ProductGridSchema = z.object({
 
 ## 5. Page templates and discriminated unions
 
-Pages are governed by specific structural templates (e.g. `LandingTemplate` or `BlogTemplate`) to restrict which blocks are allowed where.
+Pages are governed by specific structural templates (e.g. `LandingTemplate` or `MerchantTemplate`) to restrict which blocks are allowed where.
 
 ### A. Template schemas
 Each template file defines its custom metadata and the components it permits:
 
 ```typescript
-// apps/storefront/src/templates/BlogTemplate/BlogTemplate.tsx
+// apps/storefront/src/templates/MerchantTemplate/MerchantTemplate.tsx
 import { z } from 'zod';
 import { HeroSchema } from '../../components/Hero/Hero';
 import { TextSchema } from '../../components/Text/Text';
+import { ProductGridSchema } from '../../components/ProductGrid/ProductGrid';
 
-export const BlogTemplateSchema = z.object({
+export const MerchantTemplateSchema = z.object({
   title: z.string(),
-  template: z.literal('blog'),
-  authorName: z.string().default('Blender Next Editorial'),
+  template: z.literal('merchant'),
+  merchantType: z.string().default('Local Cuisine'),
+  deliveryFee: z.string().default('$1.99 Delivery'),
+  deliveryTime: z.string().default('20-30 min'),
+  rating: z.string().default('4.7 (100+ ratings)'),
   blocks: z.array(
     z.union([
       z.object({ type: z.literal('Hero'), data: HeroSchema }),
-      z.object({ type: z.literal('Text'), data: TextSchema })
+      z.object({ type: z.literal('Text'), data: TextSchema }),
+      z.object({ type: z.literal('ProductGrid'), data: ProductGridSchema })
     ])
   )
 });
@@ -149,11 +154,11 @@ The master validator inside [`src/schemas/page.ts`](../apps/storefront/src/schem
 ```typescript
 import { z } from 'zod';
 import { LandingTemplateSchema } from '../templates/LandingTemplate/LandingTemplate';
-import { BlogTemplateSchema } from '../templates/BlogTemplate/BlogTemplate';
+import { MerchantTemplateSchema } from '../templates/MerchantTemplate/MerchantTemplate';
 
 export const PageSchema = z.discriminatedUnion('template', [
   LandingTemplateSchema,
-  BlogTemplateSchema,
+  MerchantTemplateSchema,
 ]);
 ```
 
@@ -171,7 +176,7 @@ import dynamic from 'next/dynamic';
 
 const TemplateRegistry: Record<string, React.ComponentType<any>> = {
   landing: dynamic(() => import('../templates/LandingTemplate/LandingTemplate'), { loading: () => <p>Loading Layout...</p> }),
-  blog: dynamic(() => import('../templates/BlogTemplate/BlogTemplate')),
+  merchant: dynamic(() => import('../templates/MerchantTemplate/MerchantTemplate')),
 };
 
 export default function DynamicPageClient({ initialData, slug }: DynamicPageClientProps) {
