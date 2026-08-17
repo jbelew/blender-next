@@ -61,8 +61,6 @@ We decided not to choose Asteryx for a few reasons:
 
 ---
 
----
-
 ## 6. Tailwind vs. BEM (CSS Architecture)
 
 Traditional storefront systems (including older XML/XSLT layout platforms) historically relied on the **BEM (Block, Element, Modifier)** naming convention for stylesheets:
